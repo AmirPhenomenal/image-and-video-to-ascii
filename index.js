@@ -16,25 +16,38 @@ ffmpeg.setFfmpegPath(ffmpInstaller.path);
 //Path to image (can feed url)
 const imagePath = "tstiimg.jpg";
 
-//Image Size Option
-const terminalImageSize = { height: 50, width: 50 };
+//Image Size And Video Fps Option
+const settings = { height: 50, width: 50, fps: 10 };
 
+export const setOptions = (options) => {
+  if (options.height) settings.height = options.height;
+  if (options.width) settings.width = options.width;
+  if (options.fps) settings.fps = options.fps;
+};
+const pathValidation = async (path) => {
+  return fs.existsSync(path);
+};
 export const getImageAscii = async (imgPath) => {
-  let result = "";
-  await jimp.read(imgPath).then((img) => {
-    img.resize(terminalImageSize.height, terminalImageSize.width);
-    for (let i = 0; i < terminalImageSize.height; i++) {
-      for (let j = 0; j < terminalImageSize.width; j++) {
-        const { r, g, b } = jimp.intToRGBA(img.getPixelColor(j, i));
-        result += chalk.rgb(r, g, b).inverse("　");
+  try {
+    if (!(await pathValidation(imgPath))) throw "Path Not Valid";
+    let result = "";
+    await jimp.read(imgPath).then((img) => {
+      img.resize(settings.height, settings.width);
+      for (let i = 0; i < settings.height; i++) {
+        for (let j = 0; j < settings.width; j++) {
+          const { r, g, b } = jimp.intToRGBA(img.getPixelColor(j, i));
+          result += chalk.rgb(r, g, b).inverse("　");
+        }
+        result += "\n";
       }
-      result += "\n";
-    }
-  });
-  return result;
+    });
+    return result;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-export const printImage = async (imgPath) => {
+const printImage = async (imgPath) => {
   console.log(await getImageAscii(imgPath));
 };
 
@@ -45,32 +58,51 @@ const extractingFrames = async (videoPath) => {
   await ffmpegExtractFrames({
     input: videoPath,
     output: "./tmpFrames/%d.png",
-    fps: 10,
+    fps: settings.fps,
   });
 };
 export const getVideoAscii = async (videoPath) => {
-  await extractingFrames(videoPath);
-  let frames = [];
-  const tmpFrames = fs.readdirSync("./tmpFrames");
-  for (let i = 1; i <= tmpFrames.length; i++) {
-    const image = `./tmpFrames/${i}.png`;
-    frames.push(await getImageAscii(image));
+  try {
+    if (!(await pathValidation(videoPath))) throw "Path Not Valid";
+    await extractingFrames(videoPath);
+    let frames = [];
+    const tmpFrames = fs.readdirSync("./tmpFrames");
+    for (let i = 1; i <= tmpFrames.length; i++) {
+      const image = `./tmpFrames/${i}.png`;
+      frames.push(await getImageAscii(image));
+    }
+    await deleteTempFiles();
+    return frames;
+  } catch (error) {
+    console.log(error);
   }
-  await deleteTempFiles();
-  return frames;
 };
 
-export const deleteTempFiles = async () => {
+const deleteTempFiles = async () => {
   if (fs.existsSync("tmpFrames")) {
     fs.rmSync("tmpFrames", { recursive: true, force: true });
   }
 };
 export const showVideo = async (videoPath) => {
-  const frames = await getVideoAscii(videoPath);
-  for (let i = 0; i < frames.length; i++) {
-    process.stdout.write(frames[i]);
-    process.rawde;
-    await delay(50);
-    console.clear();
+  try {
+    if (!(await pathValidation(videoPath))) throw "Path Not Valid";
+    const frames = await getVideoAscii(videoPath);
+    for (let i = 0; i < frames.length; i++) {
+      process.stdout.write(frames[i]);
+      process.rawde;
+      await delay(50);
+      console.clear();
+    }
+  } catch (error) {
+    console.log(error);
   }
+};
+
+//To Make Both Named And Default Import Work
+export default {
+  setOptions,
+  getImageAscii,
+  printImage,
+  getVideoAscii,
+  showVideo,
 };
