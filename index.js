@@ -19,7 +19,7 @@ const imagePath = "tstiimg.jpg";
 //Image Size And Video Fps Option
 const settings = { height: 50, width: 50, fps: 10 };
 
-export const setOptions = (options) => {
+export const setDefaultOptions = (options) => {
   if (options.height) settings.height = options.height;
   if (options.width) settings.width = options.width;
   if (options.fps) settings.fps = options.fps;
@@ -27,12 +27,16 @@ export const setOptions = (options) => {
 const pathValidation = async (path) => {
   return fs.existsSync(path);
 };
-export const getImageAscii = async (imgPath) => {
+export const getImageAscii = async (imgPath, opt) => {
   try {
     if (!(await pathValidation(imgPath))) throw "Path Not Valid";
     let result = "";
     await jimp.read(imgPath).then((img) => {
-      img.resize(settings.height, settings.width);
+      if (opt.height && opt.width) {
+        img.resize(opt.height, opt.width);
+      } else {
+        img.resize(settings.height, settings.width);
+      }
       for (let i = 0; i < settings.height; i++) {
         for (let j = 0; j < settings.width; j++) {
           const { r, g, b } = jimp.intToRGBA(img.getPixelColor(j, i));
@@ -47,29 +51,29 @@ export const getImageAscii = async (imgPath) => {
   }
 };
 
-const printImage = async (imgPath) => {
-  console.log(await getImageAscii(imgPath));
+const printImage = async (imgPath, opt) => {
+  console.log(await getImageAscii(imgPath, opt));
 };
 
-const extractingFrames = async (videoPath) => {
+const extractingFrames = async (videoPath, fps) => {
   if (!fs.existsSync("tmpFrames")) {
     fs.mkdirSync("tmpFrames");
   }
   await ffmpegExtractFrames({
     input: videoPath,
     output: "./tmpFrames/%d.png",
-    fps: settings.fps,
+    fps: fps ? fps : settings.fps,
   });
 };
-export const getVideoAscii = async (videoPath) => {
+export const getVideoAscii = async (videoPath, opt) => {
   try {
     if (!(await pathValidation(videoPath))) throw "Path Not Valid";
-    await extractingFrames(videoPath);
+    await extractingFrames(videoPath, opt.fps);
     let frames = [];
     const tmpFrames = fs.readdirSync("./tmpFrames");
     for (let i = 1; i <= tmpFrames.length; i++) {
       const image = `./tmpFrames/${i}.png`;
-      frames.push(await getImageAscii(image));
+      frames.push(await getImageAscii(image, opt));
     }
     await deleteTempFiles();
     return frames;
@@ -83,10 +87,10 @@ const deleteTempFiles = async () => {
     fs.rmSync("tmpFrames", { recursive: true, force: true });
   }
 };
-export const showVideo = async (videoPath) => {
+export const showVideo = async (videoPath, opt) => {
   try {
     if (!(await pathValidation(videoPath))) throw "Path Not Valid";
-    const frames = await getVideoAscii(videoPath);
+    const frames = await getVideoAscii(videoPath, opt);
     for (let i = 0; i < frames.length; i++) {
       process.stdout.write(frames[i]);
       process.rawde;
@@ -100,7 +104,7 @@ export const showVideo = async (videoPath) => {
 
 //To Make Both Named And Default Import Work
 export default {
-  setOptions,
+  setDefaultOptions,
   getImageAscii,
   printImage,
   getVideoAscii,

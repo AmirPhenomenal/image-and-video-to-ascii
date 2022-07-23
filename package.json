@@ -1,20 +1,40 @@
 {
   "name": "image-and-video-to-ascii",
-  "version": "1.0.0",
-  "type": "module",
+  "version": "1.0.1",
   "description": "",
+  "type": "module",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "chalk": "^5.0.1",
     "delay": "^5.0.0",
     "ffmpeg-extract-frames": "^2.0.2",
     "jimp": "^0.16.1"
-  }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AmirPhenomenal/image-and-video-to-ascii.git"
+  },
+  "keywords": [
+    "ascii",
+    "image",
+    "terminal",
+    "convert ascii",
+    "ascii art",
+    "ascii video",
+    "ascii image",
+    "image to ascii",
+    "video to ascii",
+    "video in terminal",
+    "image in terminal"
+  ],
+  "author": "AmirPhenomenal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AmirPhenomenal/image-and-video-to-ascii/issues"
+  },
+  "homepage": "https://github.com/AmirPhenomenal/image-and-video-to-ascii#readme"
 }
