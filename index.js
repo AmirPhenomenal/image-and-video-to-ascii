@@ -31,16 +31,32 @@ export const getImageAscii = async (imgPath, opt) => {
   try {
     if (!(await pathValidation(imgPath))) throw "Path Not Valid";
     let result = "";
+    let heightAndWidth = {};
+    let spaces = opt && opt.space ? opt.space : 0;
     await jimp.read(imgPath).then((img) => {
-      if (opt.height && opt.width) {
-        img.resize(opt.height, opt.width);
+      if (opt && (opt.noResize || opt.noResize == true)) {
+        heightAndWidth.width = img.bitmap.width;
+        heightAndWidth.height = img.bitmap.height;
+      } else if (opt && opt.height && opt.width) {
+        heightAndWidth = opt;
       } else {
-        img.resize(settings.height, settings.width);
+        heightAndWidth = settings;
       }
-      for (let i = 0; i < settings.height; i++) {
-        for (let j = 0; j < settings.width; j++) {
-          const { r, g, b } = jimp.intToRGBA(img.getPixelColor(j, i));
-          result += chalk.rgb(r, g, b).inverse("　");
+      img.resize(heightAndWidth.height, heightAndWidth.width);
+
+      for (let i = 0; i < heightAndWidth.height; i++) {
+        for (let j = 0; j < heightAndWidth.width + spaces; j++) {
+          if (j < spaces) {
+            result += "　";
+            continue;
+          }
+          const pixel = img.getPixelColor(j - spaces, i);
+          if (pixel == 0) {
+            result += "　";
+          } else {
+            const { r, g, b } = jimp.intToRGBA(pixel);
+            result += chalk.rgb(r, g, b).inverse("　");
+          }
         }
         result += "\n";
       }
@@ -51,7 +67,7 @@ export const getImageAscii = async (imgPath, opt) => {
   }
 };
 
-const printImage = async (imgPath, opt) => {
+export const showImage = async (imgPath, opt) => {
   console.log(await getImageAscii(imgPath, opt));
 };
 
@@ -62,13 +78,13 @@ const extractingFrames = async (videoPath, fps) => {
   await ffmpegExtractFrames({
     input: videoPath,
     output: "./tmpFrames/%d.png",
-    fps: fps ? fps : settings.fps,
+    fps: fps,
   });
 };
 export const getVideoAscii = async (videoPath, opt) => {
   try {
     if (!(await pathValidation(videoPath))) throw "Path Not Valid";
-    await extractingFrames(videoPath, opt.fps);
+    await extractingFrames(opt && opt.fps ? opt.fps : settings.fps);
     let frames = [];
     const tmpFrames = fs.readdirSync("./tmpFrames");
     for (let i = 1; i <= tmpFrames.length; i++) {
@@ -101,12 +117,29 @@ export const showVideo = async (videoPath, opt) => {
     console.log(error);
   }
 };
+export const logWithSpace = (text, space, color) => {
+  try {
+    let result = "";
+    for (let i = 0; i < space; i++) {
+      result += "　";
+    }
+    result += text;
+    if (color && color.length != 0) {
+      console.log(chalk.hex(color)(result));
+      return;
+    }
+    console.log(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 //To Make Both Named And Default Import Work
 export default {
   setDefaultOptions,
   getImageAscii,
-  printImage,
+  showImage,
   getVideoAscii,
   showVideo,
+  logWithSpace,
 };
